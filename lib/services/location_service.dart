@@ -5,12 +5,20 @@ import 'package:http/http.dart' as http;
 class RegionItem {
   final String code;
   final String name;
+  final double? latitude;
+  final double? longitude;
+  final bool hasPath;
 
   const RegionItem({
     required this.code,
     required this.name,
-    // nambahin variable langtitud dan nadtidtud nya
+    this.latitude,
+    this.longitude,
+    this.hasPath = false,
   });
+
+  bool get hasCoordinates =>
+      latitude != null && longitude != null;
 
   factory RegionItem.fromJson(
     Map<String, dynamic> json,
@@ -20,7 +28,28 @@ class RegionItem {
           json['id']?.toString() ??
           '',
       name: json['name']?.toString() ?? '',
+      latitude: _parseCoordinate(
+        json['lat'],
+      ),
+      longitude: _parseCoordinate(
+        json['lng'],
+      ),
+      hasPath: json['has_path'] == true,
     );
+  }
+
+  static double? _parseCoordinate(Object? raw) {
+    final value = raw is num
+        ? raw.toDouble()
+        : double.tryParse(raw?.toString() ?? '');
+
+    if (value == null ||
+        value.isNaN ||
+        value.isInfinite) {
+      return null;
+    }
+
+    return value;
   }
 }
 

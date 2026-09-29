@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../models/weather_model.dart';
 import '../services/location_service.dart';
 import '../services/weather_service.dart';
-import '../services/geocoding_service.dart';
 import '../widgets/location_map.dart';
 
 class WeatherPage extends StatefulWidget {
@@ -16,7 +15,6 @@ class WeatherPage extends StatefulWidget {
 class _WeatherPageState extends State<WeatherPage> {
   final LocationService _locationService = LocationService();
   final WeatherService _weatherService = WeatherService();
-  final GeocodingService _geocodingService = GeocodingService();
 
   List<RegionItem> provinces = [];
   List<RegionItem> regencies = [];
@@ -42,6 +40,7 @@ class _WeatherPageState extends State<WeatherPage> {
   double? mapLatitude;
   double? mapLongitude;
   String? mapLocationName;
+  bool mapIsEstimate = false;
 
   final TextEditingController searchController = TextEditingController();
 
@@ -230,53 +229,55 @@ class _WeatherPageState extends State<WeatherPage> {
   }
 
   Future<void> _loadMapLocation() async {
-    if (selectedVillage == null ||
-        selectedDistrict == null ||
-        selectedRegency == null ||
-        selectedProvince == null) {
-      setState(() {
-        loadingMap = false;
-      });
-      return;
-    }
+    if (!mounted) return;
 
-    try {
-      final result =
-          await _geocodingService.searchLocation(
-        village: selectedVillage!.name,
-        district: selectedDistrict!.name,
-        regency: selectedRegency!.name,
-        province: selectedProvince!.name,
-      );
+    final target = _resolveMapTarget();
 
-      if (!mounted) return;
+    setState(() {
+      loadingMap = false;
 
-      if (result == null) {
-        setState(() {
-          loadingMap = false;
-        });
+      if (target == null) {
         return;
       }
 
-      setState(() {
-        mapLatitude = result.latitude;
-        mapLongitude = result.longitude;
-        mapLocationName = selectedVillage!.name;
-        loadingMap = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
+      mapLatitude = target.item.latitude;
+      mapLongitude = target.item.longitude;
+      mapIsEstimate = target.isEstimate;
+      mapLocationName = target.item.name;
+    });
+  }
 
-      setState(() {
-        loadingMap = false;
-      });
+  _MapTarget? _resolveMapTarget() {
+    final village = selectedVillage;
+
+    if (village != null && village.hasCoordinates) {
+      return _MapTarget(
+        item: village,
+        isEstimate: false,
+      );
     }
+
+    for (final parent in [
+      selectedDistrict,
+      selectedRegency,
+      selectedProvince,
+    ]) {
+      if (parent != null && parent.hasCoordinates) {
+        return _MapTarget(
+          item: parent,
+          isEstimate: true,
+        );
+      }
+    }
+
+    return null;
   }
 
   void _resetMap() {
     mapLatitude = null;
     mapLongitude = null;
     mapLocationName = null;
+    mapIsEstimate = false;
   }
 
   Future<void> _openSearch() async {
@@ -1029,7 +1030,7 @@ class _WeatherPageState extends State<WeatherPage> {
             children: [
               CircularProgressIndicator(),
               SizedBox(height: 12),
-              Text('Mencari lokasi di peta...'),
+              Text('Menyiapkan peta...'),
             ],
           ),
         ),
@@ -1048,13 +1049,13 @@ class _WeatherPageState extends State<WeatherPage> {
         child: Column(
           children: [
             Icon(
-              Icons.map_outlined,
+              Icons.location_off_outlined,
               size: 45,
               color: Colors.grey.shade500,
             ),
             const SizedBox(height: 10),
             const Text(
-              'Lokasi peta tidak ditemukan',
+              'Koordinat wilayah ini belum tersedia',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
               ),
@@ -1062,7 +1063,7 @@ class _WeatherPageState extends State<WeatherPage> {
             const SizedBox(height: 5),
             Text(
               'Data cuaca tetap dapat ditampilkan '
-              'meskipun lokasi peta tidak tersedia.',
+              'meskipun titik peta tidak tersedia.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: Colors.grey.shade600,
@@ -1079,6 +1080,7 @@ class _WeatherPageState extends State<WeatherPage> {
       longitude: mapLongitude!,
       locationName:
           mapLocationName ?? 'Lokasi terpilih',
+      isEstimate: mapIsEstimate,
     );
   }
 
@@ -1423,8 +1425,8 @@ class _WeatherPageState extends State<WeatherPage> {
               const SizedBox(height: 6),
 
               Text(
-                'Perkiraan posisi desa atau kelurahan '
-                'berdasarkan OpenStreetMap.',
+                'Titik peta memakai titik tengah (centroid) '
+                'wilayah desa atau kelurahan dari data BIG.',
                 style: TextStyle(
                   color: Colors.grey.shade600,
                   fontSize: 13,
@@ -1438,7 +1440,8 @@ class _WeatherPageState extends State<WeatherPage> {
               const SizedBox(height: 8),
 
               Text(
-                '© OpenStreetMap contributors',
+                'Peta: © OpenStreetMap contributors • '
+                'Data wilayah: emsifa.com',
                 style: TextStyle(
                   fontSize: 11,
                   color: Colors.grey.shade500,
@@ -1451,4 +1454,14 @@ class _WeatherPageState extends State<WeatherPage> {
       ),
     );
   }
+}
+
+class _MapTarget {
+  final RegionItem item;
+  final bool isEstimate;
+
+  const _MapTarget({
+    required this.item,
+    required this.isEstimate,
+  });
 }
