@@ -13,7 +13,7 @@ class LocationModel {
     required this.adm1,
     required this.adm2,
     required this.adm3,
-    required this.adm4,
+    required this.adm4, 
     required this.provinsi,
     required this.kabupaten,
     required this.kecamatan,
@@ -40,6 +40,7 @@ class LocationModel {
       desa: json['desa']?.toString() ?? '',
     );
   }
+  //langtitud dan nadtidtud nya
 
   String get fullName {
     final parts = [

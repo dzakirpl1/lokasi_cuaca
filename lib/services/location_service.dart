@@ -9,6 +9,7 @@ class RegionItem {
   const RegionItem({
     required this.code,
     required this.name,
+    // nambahin variable langtitud dan nadtidtud nya
   });
 
   factory RegionItem.fromJson(
@@ -25,7 +26,7 @@ class RegionItem {
 
 class LocationService {
   static const String _baseUrl =
-      'https://www.emsifa.com/api-wilayah-indonesia/v2';
+      '/v2';
 
   Future<List<RegionItem>> getProvinces() async {
     return _getList(

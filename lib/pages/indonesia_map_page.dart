@@ -3,7 +3,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
 class IndonesiaMapPage extends StatelessWidget {
-  const IndonesiaMapPage({super.key});
+  const IndonesiaMapPage({super.key}); //tambahan parmenter untuk  initialCenter: LatLng(-2.5, 118.0)
 
   @override
   Widget build(BuildContext context) {
@@ -14,10 +14,10 @@ class IndonesiaMapPage extends StatelessWidget {
       ),
       body: FlutterMap(
         options: const MapOptions(
-          initialCenter: LatLng(-2.5, 118.0),
-          initialZoom: 4.5,
-          minZoom: 3.0,
-          maxZoom: 18.0,
+          initialCenter: LatLng(-2.5, 118.0), // Center of Indonesia
+          initialZoom: 12.0,
+          minZoom: 10.0,
+          maxZoom: 25.0,
         ),
         children: [
           TileLayer(
